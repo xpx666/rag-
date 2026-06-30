@@ -1,0 +1,46 @@
+#启动方法：打开命令提示符按d:进入d盘，输入cd空格目录的路径，输入streamlit run app_file_uploader.py回车
+#基于Streamlit完成WEB网页上传服务
+#streamlit:当Web页面元素发生变化，则代码重新执行一遍
+import streamlit as st
+from knowledge_base import KnowledgeBaseService
+import time
+#添加网页标题
+st.title("知识库更新服务")
+
+#file_uplaoder
+uploader_file=st.file_uploader(
+    "请上传TXT文件",
+    type=['txt'],
+    accept_multiple_files=False,  #False表示仅接受一个文件上传
+)
+
+#session_state就是一个字典
+if "service" not in st.session_state:
+   st.session_state["service"] = KnowledgeBaseService()
+
+if uploader_file is not None:
+    # 提取文件信息
+    file_name=uploader_file.name
+    file_type=uploader_file.type
+    file_size=uploader_file.size / 1024 #kb单位
+
+    st.subheader(f"文件名：{file_name}")
+    st.write(f"格式:{file_type}   大小：{file_size:.2f}KB")
+
+    #获取上传文件的内容
+    # 读取上传文件的二进制字节数据
+    content = uploader_file.getvalue()
+
+    # 尝试用 UTF-8 编码解析文本（通用标准编码）
+    try:
+        text = content.decode("utf-8")
+    # 解析失败（编码不匹配）时，执行下方代码
+    except UnicodeDecodeError:
+        # 改用 GBK 编码解析（Windows 系统 TXT 文件常用编码）
+        text = content.decode("gbk")
+
+    with st.spinner("载入知识库中..."):         #在spinner内的代码执行过程中，会有一个转圈动画
+        time.sleep(1)
+        result = st.session_state["service"].upload_by_str(text, file_name)
+        st.write(result)
+   
